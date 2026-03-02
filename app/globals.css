@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    min-height: 100%;
+    overscroll-behavior-y: none;
+    background-color: #0c0a09;
+  }
+
+  body {
+    @apply antialiased text-stone-100;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  * {
+    border-radius: 0 !important;
+  }
+}
+
+@layer components {
+  .site-shell-bg {
+    background-color: #0c0a09;
+    background-image:
+      linear-gradient(rgba(245, 245, 244, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245, 245, 244, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .btn-invert-light {
+    border: 1px solid #ffffff;
+    background-color: #ffffff;
+    color: #000000;
+    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+
+  .btn-invert-light:hover {
+    border-color: #ffffff;
+    background-color: #000000;
+    color: #ffffff;
+  }
+
+  .btn-invert-dark {
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background-color: #000000;
+    color: #ffffff;
+    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+
+  .btn-invert-dark:hover {
+    border-color: #ffffff;
+    background-color: #ffffff;
+    color: #000000;
+  }
+}
