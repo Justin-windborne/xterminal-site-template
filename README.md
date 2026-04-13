@@ -20,6 +20,7 @@ Use this project as a repeatable baseline for developer teams and developer agen
 - Blog listing and post rendering wired to xTerminal's public API
 - SEO & Tracking injection layer (`components/seo/SeoHead.tsx`, `components/seo/GtmNoscript.tsx`)
 - Dynamic `robots.txt` and `sitemap.xml` routes (includes published blog posts)
+- Workspace entity adapter (`getEntities()`) for team members, testimonials, services, and other admin-managed content types
 - Neutral env contract for tenant-scoped runtime wiring
 
 ## What This Template Does NOT Include
@@ -151,8 +152,18 @@ Beyond blog posts, the runtime adapter reads page content and site settings from
 | Page block content | `pages.content` via public API | `BlockRenderer.tsx` on each public page |
 | Site settings | `site_settings` via public API | SEO layer, layout, footer, anywhere site-wide values are needed |
 | Blog posts | `blog_posts` via public API | Blog listing, blog post pages, sitemap |
+| Workspace entities | `workspace_entities` via public API | Team pages, testimonials, services, any entity-driven content |
 
 All reads are scoped by tenant slug. The public API requires the `NEXT_PUBLIC_XT_PUBLIC_API_KEY` if the workspace has API key enforcement enabled.
+
+**Workspace entities** are a generic content type system managed in the xTerminal admin dashboard. Entity types (Team Members, Testimonials, Services, etc.) are activated per workspace. The client site reads them via `getEntities(type)`:
+
+```typescript
+import { getEntities } from '@/lib/runtime-api'
+const members = await getEntities('team_member')
+```
+
+Each entity has a `.data` object with type-specific fields (e.g., `name`, `title`, `bio`, `photo_url` for team members). See `AGENT_GUIDE.md` for the full field reference and wiring pattern.
 
 ### 4. SEO & Tracking Layer
 
@@ -234,6 +245,7 @@ The template ships with the rendering infrastructure (`BlockRenderer.tsx`, the l
 - Preserve tenant-scoped runtime headers and slug wiring.
 - Keep contact form browser requests same-origin and forward server-side. Never convert to direct cross-origin calls.
 - Keep blog reads going through `lib/runtime-api.ts`. Never hardcode blog content or bypass the runtime adapter.
+- Keep entity reads going through `getEntities()` in `lib/runtime-api.ts`. Never hardcode team member, testimonial, or service data when the workspace has those entity types activated.
 - Preserve the SEO injection components and routes — do not remove or bypass them.
 - Do not hardcode GTM container IDs, OG values, or any SEO settings in the layout. Everything reads from `site_settings` at runtime.
 - Blog post pages must implement `generateMetadata()` for per-post SEO. Do not rely solely on layout-level defaults for blog content.

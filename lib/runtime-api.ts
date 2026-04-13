@@ -35,3 +35,17 @@ export async function getRuntimeBlogPosts() {
 export async function getRuntimeBlogPost(slug: string) {
   return fetchRuntime(`/blog-posts/${slug}`)
 }
+
+export interface EntityItem {
+  id: string
+  entity_type: string
+  data: Record<string, unknown>
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export async function getEntities(type: string): Promise<EntityItem[]> {
+  const body = await fetchRuntime(`/entities/${type}`)
+  return body?.data ?? []
+}

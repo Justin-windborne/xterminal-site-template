@@ -65,6 +65,70 @@ Build custom frontend UI/UX while preserving the runtime wiring, SEO injection l
 - Exposing `SUPABASE_SERVICE_ROLE_KEY` to client-side code
 - Generating a static sitemap that excludes blog posts
 
+## Workspace Entities (Team Members, Testimonials, Services, etc.)
+
+xTerminal supports workspace entities — predefined content types managed through the admin dashboard. The first available type is **Team Members**. More types (Testimonials, Services, Events, etc.) will be added over time.
+
+### How entities work
+
+1. The workspace owner activates an entity type in the xTerminal admin dashboard (e.g., Team Members)
+2. They add/edit/reorder entries through the admin UI, including photo uploads
+3. The client site reads entities via the runtime API adapter
+4. Changes propagate to the live site within ~60 seconds (ISR revalidation)
+
+### Reading entities in the client site
+
+```typescript
+import { getEntities } from '@/lib/runtime-api'
+import type { EntityItem } from '@/lib/runtime-api'
+
+const members = await getEntities('team_member')
+```
+
+Each `EntityItem` has a `.data` object containing the entity's fields. For team members:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `data.name` | string | Full name |
+| `data.title` | string | Job title / role |
+| `data.bio` | string | Bio paragraph |
+| `data.photo_url` | string | Photo URL (Supabase Storage) |
+| `data.email` | string | Email address |
+| `data.phone` | string | Phone number |
+| `data.linkedin_url` | string | LinkedIn profile URL |
+| `data.show_email` | boolean | Show email on site |
+| `data.show_phone` | boolean | Show phone on site |
+| `data.show_linkedin` | boolean | Show LinkedIn on site |
+
+### Wiring pattern
+
+1. Call `getEntities('team_member')` in your page component (server or client)
+2. Map the `.data` fields to your card component's props — cast with `String()` and provide fallback empty strings
+3. Respect visibility toggles — only show email/phone/LinkedIn when the corresponding `show_*` field is true
+4. Sort is handled by the API (`sort_order` ascending), but add a client-side `.sort((a, b) => a.sort_order - b.sort_order)` as a safety measure
+5. Handle missing `photo_url` gracefully (show initials or a placeholder)
+6. If using `next/image` for entity photos, ensure the Supabase storage domain is in `next.config` `remotePatterns`:
+   ```javascript
+   { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' }
+   ```
+
+### Rules for entities
+
+- Entity data is a generic `Record<string, unknown>` — always cast fields before using them
+- Never hardcode entity content in source. Entities are managed in the xTerminal admin dashboard.
+- Design the rendering components however you want — the data source and field contract are the only constraints
+- The entity API returns only active entries — no need to filter by `is_active` on the client
+
+### Available entity types
+
+| Type key | Label | Description |
+|----------|-------|-------------|
+| `team_member` | Team | Team members with name, title, bio, photo, contact info |
+
+More types will be added to the xTerminal platform. When a new type is available, activate it in the admin, then call `getEntities('type_key')` from the client site — same pattern every time.
+
+---
+
 ## Wiring Custom Features
 
 When a client needs an editable content type that doesn't exist in the base template (e.g., restaurant hours, pickup specials, event listings), the wiring pattern is:
@@ -99,9 +163,10 @@ The `type_key` string is the link. The xTerminal block definition and the client
 5. Design blog listing and post pages to match the client's brand.
 6. Design the contact form to match the client's brand.
 7. Build custom pages and block components for the client's needs.
-8. If the client needs custom editable content types, coordinate with xTerminal side to create matching `workspace_block_types` entries.
-9. Deploy to Vercel.
-10. Run QA.
+8. If the workspace has entity types activated (e.g., Team Members), wire the corresponding pages to `getEntities()` from `lib/runtime-api.ts`.
+9. If the client needs custom editable content types beyond what's available, coordinate with xTerminal side to create matching `workspace_block_types` entries.
+10. Deploy to Vercel.
+11. Run QA.
 
 ## QA Checklist
 
@@ -147,6 +212,16 @@ The `type_key` string is the link. The xTerminal block definition and the client
 - [ ] No broken script tags or console errors when `site_settings` are unavailable
 - [ ] Page renders normally — SEO layer degrades silently to no-op
 - [ ] `/robots.txt` and `/sitemap.xml` return gracefully (404 or empty, not 500)
+
+### Workspace Entities (if applicable)
+
+- [ ] Entity pages (e.g., team) display data from xTerminal admin
+- [ ] Entity photos render correctly (Supabase Storage URLs work with `next/image` if used)
+- [ ] Visibility toggles are respected (email/phone/LinkedIn hidden when toggled off)
+- [ ] Sort order matches admin dashboard ordering
+- [ ] Edits in xTerminal admin appear on the live site within ~60 seconds
+- [ ] Missing photos degrade gracefully (initials or placeholder, not broken image)
+- [ ] Page renders gracefully when API returns empty (fallback or empty state)
 
 ### Custom Features (if applicable)
 
